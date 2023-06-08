@@ -1,0 +1,49 @@
+{
+    "skills": [
+        {
+            "@odata.type": "#Microsoft.Skills.Text.KeyPhraseExtractionSkill",
+            "defaultLanguageCode": "ja",
+            "inputs": [
+                {
+                    "name": "text",
+                    "source": "/document/text"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "keyPhrases",
+                    "targetName": "keyphrases"
+                }
+            ]
+        },
+        {
+            "@odata.type": "#Microsoft.Skills.Text.V3.EntityRecognitionSkill",
+            "defaultLanguageCode": "ja",
+            "categories": [
+                "Product",
+                "Person",
+                "Organization",
+                "Event",
+                "Skill",
+                "Location",
+                "PersonType"
+            ],
+            "inputs": [
+                {
+                    "name": "text",
+                    "source": "/document/text"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "namedEntities",
+                    "targetName": "namedEntities"
+                }
+            ]
+        }
+    ],
+    "cognitiveServices": {
+        "@odata.type": "#Microsoft.Azure.Search.CognitiveServicesByKey",
+        "key": "{{COGNITIVE_SERVICE_KEY}}"
+    }
+}

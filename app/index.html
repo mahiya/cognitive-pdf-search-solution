@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
+    <link
+        href="https://azurecomcdn.azureedge.net/cvt-6ce4fb2122db3c5c8ff787c6c9f4d1291ae55347930af2c428fc09f6a6dc5b03/images/icon/favicon.ico"
+        rel="icon" type="image/x-icon" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="style.css">
+    <title>PDFファイル検索 - Azure Cognitive Search</title>
+</head>
+
+<body>
+    <div id="app" class="container-fluid" v-cloak>
+        <div class="row">
+
+            <!-- サイドバー -->
+            <nav class="bg-dark text-white min-vh-100 px-3 py-3 col-auto" style="width: 350px">
+
+                <!-- タイトル -->
+                <h1 class="text-white h5">
+                    <span>PDFファイル検索</span>
+                </h1>
+                <hr>
+
+                <!-- 検索ボックス -->
+                <div>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input v-model="search" class="form-control" list="datalistOptions" placeholder="検索">
+                        <datalist id="datalistOptions">
+                            <option v-for="suggestion in suggestions" v-bind:value="suggestion">
+                        </datalist>
+                    </div>
+                </div>
+
+                <!-- ファセット -->
+                <div class="my-4" v-if="checkedFacets" v-for="facet in facets">
+                    <h3 class="h6">{{facet.displayName}}</h3>
+                    <div class="form-check" v-for="value in facet.values">
+                        <input class="form-check-input" type="checkbox" v-bind:id="value.id"
+                            v-model="checkedFacets[value.id]">
+                        <label class="form-check-label" v-bind:for="value.id">
+                            {{value.displayName}} ({{value.count}})
+                        </label>
+                    </div>
+                </div>
+                <hr>
+            </nav>
+
+            <!-- ページ部 -->
+            <div class="bg-light col py-3 px-3">
+
+                <!-- 検索結果 -->
+                <h2 class="h5">検索結果</h2>
+                <div v-if="!searching && docs.length == 0">検索結果が見つかりませんでした</div>
+                <div v-if="!searching && docs.length > 0">
+                    <span>{{docsCount}}件の検索結果が見つかりました</span>
+                    <span class="ms-2">{{page}}ページ目</span>
+                </div>
+                <div class="card my-3" v-for="doc in docs">
+                    <div class="card-header h6">
+                        <span>{{doc.blobName}}</span>
+                        <span class="ms-1">P{{doc.pageNumber}}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-text">
+                            <span v-html="doc.text"></span>
+                            <span>(検索スコア: {{Math.round(doc["@search.score"]*100)/100}})</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading アイコン -->
+                <div class="w-100 mt-3" v-if="searching">
+                    <div>
+                        <div class="spinner spinner-border text-secondary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 検索結果のページ選択(ページネーション) -->
+                <ul class="pagination" v-if="maxPage">
+                    <li class="page-item" v-bind:class="{ 'disabled': page == 1 }">
+                        <a class="page-link" href="#" aria-label="Previous" v-on:click="onPagenationClicked(page-1)">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item" v-for="pagenation in Array.from({length: 5}, (v, k) => page + k - 2)"
+                        v-if="pagenation > 0 && pagenation <= maxPage" v-bind:class="{ 'active': pagenation == page }">
+                        <a class="page-link" href="#" v-on:click="onPagenationClicked(pagenation)">{{pagenation}}</a>
+                    </li>
+                    <li class="page-item" v-bind:class="{ 'disabled': page == maxPage }">
+                        <a class="page-link" href="#" aria-label="Next" v-on:click="onPagenationClicked(page+1)">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="settings.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

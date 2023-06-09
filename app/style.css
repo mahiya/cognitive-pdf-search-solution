@@ -9,6 +9,11 @@
     display: none;
 }
 
+.card:hover {
+    cursor: pointer;
+    border: 1px solid #bbb;
+}
+
 .spinner {
     width: 2.5rem;
     height: 2.5rem;

@@ -3,3 +3,4 @@ obj
 .vs
 *.sln
 settings.js
+local.settings.json

@@ -54,17 +54,16 @@
                 <hr>
             </nav>
 
-            <!-- ページ部 -->
+            <!-- 検索結果 -->
             <div class="bg-light col py-3 px-3">
 
-                <!-- 検索結果 -->
                 <h2 class="h5">検索結果</h2>
                 <div v-if="!searching && docs.length == 0">検索結果が見つかりませんでした</div>
                 <div v-if="!searching && docs.length > 0">
                     <span>{{docsCount}}件の検索結果が見つかりました</span>
                     <span class="ms-2">{{page}}ページ目</span>
                 </div>
-                <div class="card my-3" v-for="doc in docs">
+                <div class="card my-3" v-for="doc in docs" @click="displayPdfFile(doc)">
                     <div class="card-header h6">
                         <span>{{doc.blobName}}</span>
                         <span class="ms-1">P{{doc.pageNumber}}</span>
@@ -104,6 +103,11 @@
                     </li>
                 </ul>
 
+            </div>
+
+            <!-- PDFファイル表示 -->
+            <div class="bg-light col py-3 px-0 pe-3">
+                <embed v-if="displayingPdfUrl" v-bind:src="displayingPdfUrl" class="w-100 h-100" />
             </div>
         </div>
     </div>

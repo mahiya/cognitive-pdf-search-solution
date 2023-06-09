@@ -42,7 +42,8 @@ az functionapp config appsettings set \
     --resource-group $resourceGroupName \
     --name $functionAppName \
     --settings "STORAGE_ACCOUNT_NAME=$storageAccountName" \
-               "DEST_STORAGE_CONTAINER_NAME=$ocrResultsBlobContainerName" \
+               "STORAGE_CONTAINER_NAME_PDFS=$pdfsBlobContainerName" \
+               "STORAGE_CONTAINER_NAME_OCRRESULTS=$ocrResultsBlobContainerName" \
                "COMPUTER_VISION_REGION=$region" \
                "COMPUTER_VISION_KEY=$computerVisionKey" \
                "COGNITIVE_SEARCH_NAME=$cognitiveSearchName" \
@@ -103,8 +104,18 @@ curl -X PUT https://$cognitiveSearchName.search.windows.net/indexers/$cognitiveS
 # Cognitive Search へアクセスするためのクエリキーを取得する
 cognitiveSearchQueryKey=`az search query-key list --resource-group $resourceGroupName --service-name $cognitiveSearchName --query "[0].key" --output tsv`
 
+# アップロードされたPDFファイルへの一時アクセスURLを発行するための Web API のエンドポイントを取得する
+functionCode=`az functionapp function keys list \
+    --resource-group $resourceGroupName \
+    --name $functionAppName \
+    --function-name 'PublishTempPdfUrl' \
+    --query "default" \
+    --output tsv`
+functionApiUri=`echo https://$functionAppName.azurewebsites.net/api/PublishTempPdfUrl?code=$functionCode`
+
 # テンプレートから "app/settings.js" ファイルを作成する
-sed -e "s/{{NAME}}/$cognitiveSearchName/g" \
-    -e "s/{{KEY}}/$cognitiveSearchQueryKey/g" \
-    -e "s/{{INDEX_NAME}}/$cognitiveSearchIndexName/g" \
+sed -e "s/{{COGNITIVE_SEARCH_NAME}}/$cognitiveSearchName/g" \
+    -e "s/{{COGNITIVE_SEARCH_KEY}}/$cognitiveSearchQueryKey/g" \
+    -e "s/{{COGNITIVE_SEARCH_INDEX_NAME}}/$cognitiveSearchIndexName/g" \
+    -e "s|{{FUNCTION_API_ENDPOINT}}|$functionApiUri|g" \
     "app/settings_template.js" > app/settings.js

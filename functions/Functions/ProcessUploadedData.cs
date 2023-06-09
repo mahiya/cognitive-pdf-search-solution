@@ -32,7 +32,7 @@ namespace Functions
             SearchIndexerClient searchIndexerClient)
         {
             _blobServiceClient = blobServiceClient;
-            _blobContainerClient = blobServiceClient.GetBlobContainerClient(config.DestinationStorageContainerName);
+            _blobContainerClient = blobServiceClient.GetBlobContainerClient(config.OcrResultsStorageContainerName);
             _computerVisionClient = computerVisionClient;
             _searchIndexerClient = searchIndexerClient;
             _searchIndexerName = config.CognitiveSearchIndexerName;

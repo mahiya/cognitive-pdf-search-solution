@@ -18,12 +18,17 @@ namespace Functions
 
         public Startup()
         {
+            // 環境変数および local.settings.json の設定情報を取得する
             var config = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
                 .AddJsonFile("local.settings.json", true);
             Configuration = config.Build();
         }
 
+        /// <summary>
+        /// 主に Dependency Injection の設定を行う
+        /// ここで DI 設定をしたインスタンスは各関数で使用することができる
+        /// </summary>
         public override void Configure(IFunctionsHostBuilder builder)
         {
             var config = new FunctionConfiguration(Configuration);

@@ -1,7 +1,7 @@
 new Vue({
     el: '#app',
     data: {
-        settings: {},
+        cognitiveSearch: {},
         search: "",
         searching: false,
         docs: [],
@@ -10,11 +10,14 @@ new Vue({
         facets: {},
         checkedFacets: {},
         page: 1,
-        maxPage: null
+        maxPage: null,
+        functionApi: null,
+        displayingPdfUrl: null
     },
     // 画面表示時の処理
     async mounted() {
-        this.settings = settings;
+        this.cognitiveSearch = settings.cognitiveSearch;
+        this.functionApi = settings.publishTempPdfUrlApiEndpoint;
         await this.searchDocuments();
     },
     watch: {
@@ -40,24 +43,24 @@ new Vue({
             this.docs = [];
             this.searching = true;
 
-            const url = `https://${this.settings.name}.search.windows.net/indexes/${this.settings.indexName}/docs/search?api-version=${this.settings.apiVersion}`;
+            const url = `https://${this.cognitiveSearch.name}.search.windows.net/indexes/${this.cognitiveSearch.indexName}/docs/search?api-version=${this.cognitiveSearch.apiVersion}`;
             const headers = {
                 "Content-Type": "application/json",
-                "api-key": this.settings.key
+                "api-key": this.cognitiveSearch.key
             };
             const body = {
                 search: this.search,
-                top: this.settings.searchTop,
-                skip: (this.page - 1) * this.settings.searchTop,
-                facets: Object.keys(this.settings.facetNames).map(
+                top: this.cognitiveSearch.searchTop,
+                skip: (this.page - 1) * this.cognitiveSearch.searchTop,
+                facets: Object.keys(this.cognitiveSearch.facetNames).map(
                     (f) => `${f},count:5,sort:count`
                 ),
                 count: true,
-                highlight: this.settings.highlight,
-                highlightPreTag: this.settings.highlightPreTag,
-                highlightPostTag: this.settings.highlightPostTag,
+                highlight: this.cognitiveSearch.highlight,
+                highlightPreTag: this.cognitiveSearch.highlightPreTag,
+                highlightPostTag: this.cognitiveSearch.highlightPostTag,
             };
-            if (this.settings.scoringProfile)
+            if (this.cognitiveSearch.scoringProfile)
                 body["scoringProfile"] = settings.scoringProfile;
 
             // ファセットでのフィルタを定義する
@@ -83,7 +86,7 @@ new Vue({
                 if (value["@search.highlights"]) {
                     for (const highlightProp of Object.keys(value["@search.highlights"])) {
                         for (const highlight of value["@search.highlights"][highlightProp]) {
-                            const replaceFrom = highlight.replaceAll(this.settings.highlightPreTag, "").replaceAll(this.settings.highlightPostTag, "");
+                            const replaceFrom = highlight.replaceAll(this.cognitiveSearch.highlightPreTag, "").replaceAll(this.cognitiveSearch.highlightPostTag, "");
                             const replaceTo = highlight;
                             value[highlightProp] = value[highlightProp].replaceAll(replaceFrom, replaceTo);
                         }
@@ -98,7 +101,7 @@ new Vue({
                 this.facets = Object.keys(facets).map(facetName => {
                     return {
                         name: facetName,
-                        displayName: this.settings.facetNames[facetName],
+                        displayName: this.cognitiveSearch.facetNames[facetName],
                         values: facets[facetName].filter(f => f.value).map(f => {
                             return {
                                 id: `${facetName}_${f.value}`,
@@ -112,7 +115,12 @@ new Vue({
 
             // 検索対象のデータ数を取得する
             this.docsCount = resp.data["@odata.count"];
-            this.maxPage = Math.ceil(this.docsCount / this.settings.searchTop);
+            this.maxPage = Math.ceil(this.docsCount / this.cognitiveSearch.searchTop);
+
+            // 検索結果のトップの PDF ファイルを画面に表示する
+            if (this.docs.length > 0) {
+                await this.displayPdfFile(this.docs[0]);
+            }
         },
         // サジェストを取得する
         getSuggestions: async function () {
@@ -121,21 +129,21 @@ new Vue({
             if (!this.search) return;
 
             // サジェスター名が指定されていない場合は処理を行わない
-            if (!this.settings.suggesterName) return;
+            if (!this.cognitiveSearch.suggesterName) return;
 
             // Azure Cognitive Search REST API を呼び出してサジェストを取得する
             // 参考：https://learn.microsoft.com/ja-jp/rest/api/searchservice/suggestions
             const queryParameters = {
-                "api-version": this.settings.apiVersion,
+                "api-version": this.cognitiveSearch.apiVersion,
                 "search": this.search,
-                "suggesterName": this.settings.suggesterName,
+                "suggesterName": this.cognitiveSearch.suggesterName,
                 "$top": 50,
             };
             const queryString = Object.keys(queryParameters).map(key => [key, queryParameters[key]].join("=")).join("&");
-            const url = `https://${this.settings.name}.search.windows.net/indexes/${this.settings.indexName}/docs/suggest?${queryString}`;
+            const url = `https://${this.cognitiveSearch.name}.search.windows.net/indexes/${this.cognitiveSearch.indexName}/docs/suggest?${queryString}`;
             const headers = {
                 "Content-Type": "application/json",
-                "api-key": this.settings.key
+                "api-key": this.cognitiveSearch.key
             };
             const resp = await axios.get(url, { headers });
 
@@ -144,7 +152,7 @@ new Vue({
             for (const value of resp.data.value) {
                 if (!values.includes(value["@search.text"]))
                     values.push(value["@search.text"]);
-                if (values.length >= this.settings.suggestionTop) break;
+                if (values.length >= this.cognitiveSearch.suggestionTop) break;
             }
             this.suggestions = values;
         },
@@ -152,7 +160,13 @@ new Vue({
         onPagenationClicked: function (newPage) {
             this.page = newPage;
             this.searchDocuments();
-        }
+        },
+        // 指定した検索結果のPDFファイル(ページ指定)を画面に表示する
+        displayPdfFile: async function (doc) {
+            const url = `${this.functionApi}&n=${encodeURI(doc.blobName)}`;
+            const resp = await axios.get(url);
+            this.displayingPdfUrl = `${resp.data}#page=${doc.pageNumber}`;
+        },
     }
 });
 

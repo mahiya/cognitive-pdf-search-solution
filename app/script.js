@@ -67,7 +67,7 @@ new Vue({
             const filters = [];
             for (const facetValue of Object.keys(this.checkedFacets)) {
                 if (this.checkedFacets[facetValue]) {
-                    const splited = facetValue.split('_');
+                    const splited = facetValue.split('%%%%%');
                     const facet = splited[0];
                     const value = splited[1];
                     filters.push(`${facet} eq '${value}'`);
@@ -104,7 +104,7 @@ new Vue({
                         displayName: this.cognitiveSearch.facetNames[facetName],
                         values: facets[facetName].filter(f => f.value).map(f => {
                             return {
-                                id: `${facetName}_${f.value}`,
+                                id: `${facetName}%%%%%${f.value}`,
                                 displayName: f.value,
                                 count: f.count,
                             };
